@@ -1,9 +1,10 @@
-service: app
+service: serverless-payments
 
 provider:
     name: aws
-    region: us-east-1
+    region: eu-west-1
     runtime: provided.al2
+    lambdaHashingVersion: 20201221
 
 plugins:
     - ./vendor/bref/bref

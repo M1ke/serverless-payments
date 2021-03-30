@@ -52,9 +52,9 @@ $routes($app);
 /** @var SettingsInterface $settings */
 $settings = $container->get(SettingsInterface::class);
 
-$displayErrorDetails = $settings->get('displayErrorDetails');
-$logError = $settings->get('logError');
-$logErrorDetails = $settings->get('logErrorDetails');
+$displayErrorDetails = $settings->get(SettingsInterface::displayErrorDetails);
+$logError = $settings->get(SettingsInterface::logError);
+$logErrorDetails = $settings->get(SettingsInterface::logErrorDetails);
 
 // Create Request object from globals
 $serverRequestCreator = ServerRequestCreatorFactory::create();
