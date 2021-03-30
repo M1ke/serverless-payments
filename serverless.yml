@@ -21,7 +21,7 @@ functions:
 
 # Exclude files from deployment
 package:
-    exclude:
-        - 'node_modules/**'
-        - 'public/**'
-        - 'tests/**'
+    patterns:
+        - '!node_modules/**'
+        - '!public/**'
+        - '!tests/**'
