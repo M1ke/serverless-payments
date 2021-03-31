@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import {
 	CardElement,
 	useStripe,
 	useElements
 } from "@stripe/react-stripe-js";
 
-export default function CheckoutForm() {
+export default function CheckoutForm(){
 	const [succeeded, setSucceeded] = useState(false);
 	const [error, setError] = useState(null);
 	const [processing, setProcessing] = useState('');
@@ -22,7 +22,7 @@ export default function CheckoutForm() {
 				headers: {
 					"Content-Type": "application/json"
 				},
-				body: JSON.stringify({items: [{ id: "xl-tshirt" }]})
+				body: JSON.stringify({items: [{id: "xl-tshirt"}]})
 			})
 			.then(res => {
 				return res.json();
@@ -67,10 +67,11 @@ export default function CheckoutForm() {
 			}
 		});
 
-		if (payload.error) {
+		if (payload.error){
 			setError(`Payment failed ${payload.error.message}`);
 			setProcessing(false);
-		} else {
+		}
+		else {
 			setError(null);
 			setProcessing(false);
 			setSucceeded(true);
@@ -79,14 +80,14 @@ export default function CheckoutForm() {
 
 	return (
 		<form id="payment-form" onSubmit={handleSubmit}>
-			<CardElement id="card-element" options={cardStyle} onChange={handleChange} />
+			<CardElement id="card-element" options={cardStyle} onChange={handleChange}/>
 			<button
 				disabled={processing || disabled || succeeded}
 				id="submit"
 			>
         <span id="button-text">
           {processing ? (
-	          <div className="spinner" id="spinner"></div>
+	          <div className="spinner" id="spinner"/>
           ) : (
 	          "Pay now"
           )}
