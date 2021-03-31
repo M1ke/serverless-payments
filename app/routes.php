@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Application\Actions\Payments\CreatePaymentAction;
 use App\Application\Actions\User\ListUsersAction;
 use App\Application\Actions\User\ViewUserAction;
 use Psr\Http\Message\ResponseInterface;
@@ -19,6 +20,8 @@ return static function (App $app){
 
 		return $response;
 	});
+
+	$app->post('/create', CreatePaymentAction::class);
 
 	$app->group('/users', function (Group $group){
 		$group->get('', ListUsersAction::class);

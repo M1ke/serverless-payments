@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "start": "php -S localhost:8080",
+    "start": "php -S localhost:8080 -dzend_extension=xdebug -c php.ini",
     "test": "phpunit"
   }
 }

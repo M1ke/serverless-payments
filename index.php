@@ -10,7 +10,6 @@ use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
 
 // @mod We changed public/index.php to index.php and then remapped the paths here
-
 require __DIR__ . '/vendor/autoload.php';
 
 // Instantiate PHP-DI ContainerBuilder

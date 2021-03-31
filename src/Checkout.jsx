@@ -16,20 +16,19 @@ export default function CheckoutForm(){
 
 	useEffect(() => {
 		// Create PaymentIntent as soon as the page loads
-		window
-			.fetch("/create.php", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-				},
-				body: JSON.stringify({items: [{id: "xl-tshirt"}]})
-			})
-			.then(res => {
-				return res.json();
-			})
-			.then(data => {
-				setClientSecret(data.clientSecret);
-			});
+		fetch(process.env.REACT_APP_API_URL+"/create", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({items: [{id: "xl-tshirt"}]})
+		})
+		.then(res => {
+			return res.json();
+		})
+		.then(res => {
+			setClientSecret(res.data.clientSecret);
+		});
 	}, []);
 
 	const cardStyle = {
