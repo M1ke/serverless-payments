@@ -8,7 +8,7 @@ import "./App.css";
 // recreating the Stripe object on every render.
 // loadStripe is initialized with a fake API key.
 // Sign in to see examples pre-filled with your key.
-const promise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
+const promise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC);
 
 function App() {
   return (

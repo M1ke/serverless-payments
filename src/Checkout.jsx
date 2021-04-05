@@ -24,12 +24,17 @@ export default function CheckoutForm(){
 			body: JSON.stringify({items: [{id: "xl-tshirt"}]})
 		})
 		.then(res => {
+			console.log('Stripe create request', res)
 			return res.json();
 		})
 		.then(res => {
 			setClientSecret(res.data.clientSecret);
 		});
 	}, []);
+
+	if (!clientSecret){
+		return <p>Stripe is loading&hellip;</p>
+	}
 
 	const cardStyle = {
 		style: {

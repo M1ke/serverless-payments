@@ -2,8 +2,8 @@
 
 namespace App\Application\Actions\Payments;
 
-use App\Application\Actions\Payments\PaymentAction;
 use Psr\Http\Message\ResponseInterface as Response;
+use Stripe\PaymentIntent;
 use Stripe\Stripe;
 
 class CreatePaymentAction extends PaymentAction {
@@ -17,12 +17,12 @@ class CreatePaymentAction extends PaymentAction {
 
 	protected function action(): Response{
 		// This is your real test secret API key.
-		Stripe::setApiKey('sk_test_WT39umPjMrogJiaz6uuEsNmo');
+		Stripe::setApiKey($_ENV['STRIPE_PRIVATE']);
 
 		// retrieve JSON from POST body
 		$data = $this->getFormData();
 
-		$paymentIntent = \Stripe\PaymentIntent::create([
+		$paymentIntent = PaymentIntent::create([
 			'amount' => self::calculateOrderAmount($data->items),
 			'currency' => 'usd',
 		]);

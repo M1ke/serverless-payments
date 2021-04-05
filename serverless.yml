@@ -5,9 +5,12 @@ provider:
     region: eu-west-1
     runtime: provided.al2
     lambdaHashingVersion: 20201221
+    environment:
+        STRIPE_PRIVATE: ${env:STRIPE_PRIVATE}
 
 plugins:
     - ./vendor/bref/bref
+    - serverless-dotenv-plugin
 
 functions:
     api:
