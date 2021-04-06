@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source .env.development
+echo "React API endpoint: $REACT_APP_API_URL"
+echo "S3 target: $BUCKET_FRONT_END"
+
+rm -rf ./build
+# We'd expect these to come from the environment after sourcing
+# the file above, but for some reason they do not
+REACT_APP_API_URL="$REACT_APP_API_URL" REACT_APP_STRIPE_PUBLIC="$REACT_APP_STRIPE_PUBLIC" npm run build
+
+aws s3 sync build/ "s3://$BUCKET_FRONT_END/"

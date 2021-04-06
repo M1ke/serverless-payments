@@ -11,9 +11,9 @@ return static function (ContainerBuilder $containerBuilder){
 	$containerBuilder->addDefinitions([
 		SettingsInterface::class => function (){
 			return new Settings([
-				SettingsInterface::displayErrorDetails => true, // Should be set to false in production
-				SettingsInterface::logError => false,
-				SettingsInterface::logErrorDetails => false,
+				SettingsInterface::displayErrorDetails => (bool) ($_ENV['PROD'] ?? false),
+				SettingsInterface::logError => true,
+				SettingsInterface::logErrorDetails => true,
 				SettingsInterface::logger => [
 					'name' => 'slim-app',
 					// @mod we need to log to stderr to appear in Lambda logs

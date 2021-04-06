@@ -1,124 +1,116 @@
 service: serverless-payments
 
+useDotenv: true
+
 provider:
-    name: aws
-    region: eu-west-1
-    runtime: provided.al2
-    lambdaHashingVersion: 20201221
-    environment:
-        STRIPE_PRIVATE: ${env:STRIPE_PRIVATE}
+  name: aws
+  region: eu-west-1
+  runtime: provided.al2
+  lambdaHashingVersion: 20201221
+  environment:
+    STRIPE_PRIVATE: ${env:STRIPE_PRIVATE}
+    ORIGIN: ${env:ORIGIN}
 
 plugins:
-    - ./vendor/bref/bref
-    - serverless-dotenv-plugin
+  - ./vendor/bref/bref
 
 functions:
-    api:
-        handler: index.php
-        description: ''
-        timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
-        layers:
-            - ${bref:layer.php-74-fpm}
-        events:
-            -   httpApi: '*'
+  api:
+    handler: index.php
+    description: ''
+    timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+    layers:
+      - ${bref:layer.php-74-fpm}
+    events:
+      -   httpApi: '*'
 
 # Exclude files from deployment
 package:
-    patterns:
-        - '!node_modules/**'
-        - '!public/**'
-        - '!tests/**'
+  patterns:
+    - '!node_modules/**'
+    - '!public/**'
+    - '!tests/**'
 
 resources:
-    Resources:
-        # The S3 bucket that stores the assets
-        Website:
-            Type: AWS::S3::Bucket
-            Properties:
-                BucketName: serverless-payments
-        # The policy that makes the bucket publicly readable
-       WebsiteBucketPolicy:
-            Type: AWS::S3::BucketPolicy
-            Properties:
-                Bucket: !Ref Website # References the bucket we defined above
-                PolicyDocument:
-                    Statement:
-                        -   Effect: Allow
-                            Principal: '*' # everyone
-                            Action: 's3:GetObject' # to read
-                            Resource: !Join ['/', [!GetAtt Website.Arn, '*']] # things in the bucket
-                            # alternatively you can write out Resource: 'arn:aws:s3:::<bucket-name>/*'
-        WebsiteCDN:
-            Type: AWS::CloudFront::Distribution
-            Properties:
-                DistributionConfig:
-                    Enabled: true
-                    # Cheapest option by default (https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DistributionConfig.html)
-                    PriceClass: PriceClass_100
-                    # Enable http2 transfer for better performances
-                    HttpVersion: http2
-                    # Origins are where CloudFront fetches content
-                    Origins:
-                        # The website (AWS Lambda)
-                        -   Id: Api
-                            DomainName: !Join ['.', [!Ref HttpApi, 'execute-api', !Ref AWS::Region, 'amazonaws.com']]
-                            CustomOriginConfig:
-                                OriginProtocolPolicy: 'https-only' # API Gateway only supports HTTPS
-                            # CloudFront does not forward the original `Host` header. We use this
-                            # to forward the website domain name to PHP via the `X-Forwarded-Host` header.
-                            # Learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
-                            #OriginCustomHeaders:
-                            #    -   HeaderName: 'X-Forwarded-Host'
-                            #        HeaderValue: example.com # our custom domain
-                        # The assets (S3)
-                        -   Id: Website
-                            DomainName: !GetAtt Website.RegionalDomainName
-                            S3OriginConfig: {} # this key is required to tell CloudFront that this is an S3 origin, even though nothing is configured
-                            # If you host a static website, like a SPA, use s3-website URLs instead of the config above
-                            # See https://stackoverflow.com/questions/15309113/amazon-cloudfront-doesnt-respect-my-s3-website-buckets-index-html-rules#15528757
-                            # DomainName: !Select [2, !Split ["/", !GetAtt Website.WebsiteURL]]
-                            # CustomOriginConfig:
-                            #     OriginProtocolPolicy: 'http-only' # S3 websites only support HTTP
-                            # You'll also need to enable website hosting on your s3 bucket by configuring the WebsiteConfiguration property
-                            # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket.html#cfn-s3-bucket-websiteconfiguration
-                    # The default behavior is to send everything to AWS Lambda
-                    DefaultCacheBehavior:
-                        AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
-                        TargetOriginId: Website # the PHP application
-                        # Disable caching for the PHP application https://aws.amazon.com/premiumsupport/knowledge-center/prevent-cloudfront-from-caching-files/
-                        DefaultTTL: 0
-                        MinTTL: 0
-                        MaxTTL: 0
-                        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-forwardedvalues.html
-                        ForwardedValues:
-                            QueryString: true
-                            Cookies:
-                                Forward: all # Forward cookies to use them in PHP
-                            # We must *not* forward the `Host` header else it messes up API Gateway
-                            Headers:
-                                - 'Accept'
-                                - 'Accept-Encoding'
-                                - 'Accept-Language'
-                                - 'Authorization'
-                                - 'Origin'
-                                - 'Referer'
-                        # CloudFront will force HTTPS on visitors (which is more secure)
-                        ViewerProtocolPolicy: redirect-to-https
-                    CacheBehaviors:
-                        # Assets will be served under the `/assets/` prefix
-                        -   PathPattern: '/*'
-                            TargetOriginId: Assets # the static files on S3
-                            AllowedMethods: [GET, HEAD]
-                            ForwardedValues:
-                                # No need for all that with assets
-                                QueryString: 'false'
-                                Cookies:
-                                    Forward: none
-                            ViewerProtocolPolicy: redirect-to-https
-                            Compress: true # Serve files with gzip for browsers that support it (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html)
-                    CustomErrorResponses:
-                        # Force CloudFront to not cache HTTP errors
-                        -   ErrorCode: 500
-                            ErrorCachingMinTTL: 0
-                        -   ErrorCode: 504
-                            ErrorCachingMinTTL: 0
+  Resources:
+    # The S3 bucket that stores the assets
+    Website:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:BUCKET_FRONT_END}
+    # The policy that makes the bucket publicly readable
+    WebsiteBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref Website # References the bucket we defined above
+        PolicyDocument:
+          Statement:
+            -   Effect: Allow
+                Principal: '*' # everyone
+                Action: 's3:GetObject' # to read
+                Resource: !Join ['/', [!GetAtt Website.Arn, '*']] # things in the bucket
+              # alternatively you can write out Resource: 'arn:aws:s3:::<bucket-name>/*'
+    WebsiteCDN:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          # Cheapest option by default (https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DistributionConfig.html)
+          PriceClass: PriceClass_100
+          # Enable http2 transfer for better performances
+          HttpVersion: http2
+          DefaultRootObject: 'index.html'
+          # Origins are where CloudFront fetches content
+          Origins:
+            # The API (AWS Lambda)
+            -   Id: Api
+                DomainName: !Join ['.', [!Ref HttpApi, 'execute-api', !Ref AWS::Region, 'amazonaws.com']]
+                CustomOriginConfig:
+                  OriginProtocolPolicy: 'https-only' # API Gateway only supports HTTPS
+              # CloudFront does not forward the original `Host` header. We use this
+              # to forward the website domain name to PHP via the `X-Forwarded-Host` header.
+              # Learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
+              #OriginCustomHeaders:
+              #    -   HeaderName: 'X-Forwarded-Host'
+              #        HeaderValue: example.com # our custom domain
+            # The front end (S3)
+            -   Id: Website
+                DomainName: !GetAtt Website.RegionalDomainName
+                S3OriginConfig: {} # this key is required to tell CloudFront that this is an S3 origin, even though nothing is configured
+          DefaultCacheBehavior:
+            AllowedMethods: [GET, HEAD]
+            TargetOriginId: Website
+            ForwardedValues:
+              QueryString: 'false'
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true # Serve files with gzip for browsers that support it (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html)
+          CacheBehaviors:
+            -   PathPattern: '/api/*'
+                TargetOriginId: Api
+                AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+                DefaultTTL: 0
+                MinTTL: 0
+                MaxTTL: 0
+                # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-forwardedvalues.html
+                ForwardedValues:
+                  QueryString: true
+                  Cookies:
+                    Forward: all # Forward cookies to use them in PHP
+                  # We must *not* forward the `Host` header else it messes up API Gateway
+                  Headers:
+                    - 'Accept'
+                    - 'Accept-Encoding'
+                    - 'Accept-Language'
+                    - 'Authorization'
+                    - 'Origin'
+                    - 'Referer'
+                # CloudFront will force HTTPS on visitors (which is more secure)
+                ViewerProtocolPolicy: redirect-to-https
+          CustomErrorResponses:
+            # Force CloudFront to not cache HTTP errors
+            -   ErrorCode: 500
+                ErrorCachingMinTTL: 0
+            -   ErrorCode: 504
+                ErrorCachingMinTTL: 0
