@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use App\Application\Settings\Env;
 use Bref\Context\Context;
 use DI\ContainerBuilder;
 use Monolog\Formatter\JsonFormatter;
@@ -14,7 +15,7 @@ require __DIR__.'/vendor/autoload.php';
 function _getLogger(): LoggerInterface{
 	$logger = new Logger('webhooks');
 	$json_formatter = new JsonFormatter();
-	$handler = new StreamHandler('php://stderr', $_ENV['PROD'] ? LogLevel::NOTICE : LogLevel::DEBUG);
+	$handler = new StreamHandler('php://stderr', Env::isProd() ? LogLevel::NOTICE : LogLevel::DEBUG);
 	$handler->setFormatter($json_formatter);
 	$logger->pushHandler($handler);
 

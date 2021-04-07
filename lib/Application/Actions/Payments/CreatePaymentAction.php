@@ -2,6 +2,7 @@
 
 namespace App\Application\Actions\Payments;
 
+use App\Application\Settings\Env;
 use Psr\Http\Message\ResponseInterface as Response;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
@@ -17,7 +18,7 @@ class CreatePaymentAction extends PaymentAction {
 
 	protected function action(): Response{
 		// This is your real test secret API key.
-		Stripe::setApiKey($_ENV['STRIPE_PRIVATE']);
+		Stripe::setApiKey(Env::getStripeKey());
 
 		// retrieve JSON from POST body
 		$data = $this->getFormData();
