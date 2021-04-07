@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "acd8567a708e1d50d9763270b4678507",
+    "content-hash": "8291c5912591a93c68303d89213c2ee9",
     "packages": [
         {
             "name": "async-aws/core",
@@ -205,6 +205,62 @@
                 }
             ],
             "time": "2021-03-22T09:52:20+00:00"
+        },
+        {
+            "name": "bref/logger",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/brefphp/logger.git",
+                "reference": "31624f064246ebddeeff30dd8b032d8422b5c916"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/brefphp/logger/zipball/31624f064246ebddeeff30dd8b032d8422b5c916",
+                "reference": "31624f064246ebddeeff30dd8b032d8422b5c916",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": ">=7.2",
+                "psr/log": "^1.1"
+            },
+            "require-dev": {
+                "mnapoli/hard-mode": "^0.1.1",
+                "mnapoli/pretty": "^1.0",
+                "phpstan/phpstan": "^0.11.2",
+                "phpunit/phpunit": "^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Bref\\Logger\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "All you need to log with Bref on AWS Lambda",
+            "keywords": [
+                "aws-lambda",
+                "bref",
+                "cloudwatch",
+                "lambda",
+                "logger",
+                "psr-3"
+            ],
+            "support": {
+                "issues": "https://github.com/brefphp/logger/issues",
+                "source": "https://github.com/brefphp/logger/tree/1.0.1"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/mnapoli",
+                    "type": "github"
+                }
+            ],
+            "time": "2020-09-25T15:35:03+00:00"
         },
         {
             "name": "fig/http-message-util",

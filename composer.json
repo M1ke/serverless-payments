@@ -5,6 +5,7 @@
     "php": "^7.4",
     "ext-json": "*",
     "bref/bref": "^1.2",
+    "bref/logger": "^1.0",
     "monolog/monolog": "^2.2",
     "php-di/php-di": "^6.3",
     "slim/psr7": "^1.3",

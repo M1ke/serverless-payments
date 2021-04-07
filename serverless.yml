@@ -23,6 +23,19 @@ functions:
       - ${bref:layer.php-74-fpm}
     events:
       -   httpApi: '*'
+  webhook:
+    handler: webhook.php
+    layers:
+      - ${bref:layer.php-74}
+    events:
+      - sqs:
+          # We only want to process 1 at a time
+          # so if it fails we can retry
+          batchSize: 1
+          arn:
+            Fn::GetAtt:
+              - WebhookQueue
+              - Arn
 
 # Exclude files from deployment
 package:
@@ -32,6 +45,10 @@ package:
     - '!tests/**'
 
 resources:
+  Outputs:
+    WebhookURI:
+      Description: The URI that webhooks should be sent to
+      Value: !GetAtt WebhookHttpApi.ApiEndpoint
   Resources:
     # The S3 bucket that stores the assets
     Website:
@@ -90,6 +107,8 @@ resources:
             -   PathPattern: '/api/*'
                 TargetOriginId: Api
                 AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+                # We don't want to cache API activity, though we could be more
+                # specific if we had some (e.g. GET) endpoints that were cacheable
                 DefaultTTL: 0
                 MinTTL: 0
                 MaxTTL: 0
@@ -104,6 +123,7 @@ resources:
                     - 'Accept-Encoding'
                     - 'Accept-Language'
                     - 'Authorization'
+                    - 'Content-type'
                     - 'Origin'
                     - 'Referer'
                 # CloudFront will force HTTPS on visitors (which is more secure)
@@ -114,3 +134,66 @@ resources:
                 ErrorCachingMinTTL: 0
             -   ErrorCode: 504
                 ErrorCachingMinTTL: 0
+    # This is where webhooks will be saved
+    WebhookQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        VisibilityTimeout: 600
+        MessageRetentionPeriod: 604800
+        ReceiveMessageWaitTimeSeconds: 20
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt [ WebhookDeadLetterQueue, Arn ]
+          maxReceiveCount: 5
+    WebhookDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        MessageRetentionPeriod: 1209600
+    # The next list all
+    WebhookHttpApi:
+      Type: AWS::ApiGatewayV2::Api
+      Properties:
+        ProtocolType: HTTP
+        DisableExecuteApiEndpoint: false
+        Name: ${opt:stage}-payment-webhooks
+    WebhookHttpApiRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: apigateway.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: ApiWriteToSQS
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                Action: sqs:SendMessage
+                Effect: Allow
+                Resource: !GetAtt WebhookQueue.Arn
+    WebhookPayloadRoute:
+      Type: AWS::ApiGatewayV2::Route
+      Properties:
+        ApiId: !Ref WebhookHttpApi
+        RouteKey: POST /
+        Target: !Sub 'integrations/${WebhookRouteIntegration}'
+    WebhookRouteIntegration:
+      Type: AWS::ApiGatewayV2::Integration
+      Properties:
+        ApiId: !Ref WebhookHttpApi
+        Description: Proxy incoming HTTP Payload into Webhook SQS
+        IntegrationType: AWS_PROXY
+        IntegrationSubtype: SQS-SendMessage
+        PayloadFormatVersion: '1.0'
+        CredentialsArn: !GetAtt WebhookHttpApiRole.Arn
+        RequestParameters:
+          QueueUrl: !Ref WebhookQueue
+          MessageBody: $request.body # Send the body of the HTTP request into SQS
+    WehookStage:
+      Type: AWS::ApiGatewayV2::Stage
+      Properties:
+        AutoDeploy: true
+        StageName: ${opt:stage}
+        ApiId: !Ref WebhookHttpApi

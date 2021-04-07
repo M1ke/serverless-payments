@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source .env.development
+echo "Back end: $REACT_APP_API_URL"
+
+curl -I "$REACT_APP_API_URL/"
+
+
