@@ -3,6 +3,7 @@
 namespace App\Application\Actions\Payments;
 
 use App\Application\Settings\Env;
+use App\Domain\Payment\Payment;
 use Psr\Http\Message\ResponseInterface as Response;
 use Stripe\PaymentIntent;
 use Stripe\Stripe;
@@ -23,10 +24,16 @@ class CreatePaymentAction extends PaymentAction {
 		// retrieve JSON from POST body
 		$data = $this->getFormData();
 
+		$amount = self::calculateOrderAmount($data->items);
+		$currency = 'usd';
 		$paymentIntent = PaymentIntent::create([
-			'amount' => self::calculateOrderAmount($data->items),
-			'currency' => 'usd',
+			'amount' => $amount,
+			'currency' => $currency,
 		]);
+
+		$payment = new Payment($paymentIntent->id, $amount, $currency);
+
+		$this->payments->putPayment($payment);
 
 		$output = [
 			'clientSecret' => $paymentIntent->client_secret,

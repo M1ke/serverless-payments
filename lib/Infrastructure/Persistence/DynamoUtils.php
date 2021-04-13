@@ -71,7 +71,7 @@ class DynamoUtils {
 	/**
 	 * @psalm-param class-string $entity
 	 */
-	public static function construct(string $entity, array $item){
+	public static function construct(string $entity, array $item): array{
 		try {
 			$class = new ReflectionClass($entity);
 		}
@@ -88,7 +88,10 @@ class DynamoUtils {
 		$arr = [];
 		foreach ($params as $param){
 			$name = $param->name;
-			$arr[$name] = reset($item[$name]);
+			$type = $param->getType()->getName();
+			$val = reset($item[$name]);
+			settype($val, $type);
+			$arr[] = $val;
 		}
 
 		return $arr;

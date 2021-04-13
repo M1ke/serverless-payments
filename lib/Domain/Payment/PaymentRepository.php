@@ -9,4 +9,6 @@ interface PaymentRepository {
 	 * @throws PaymentNotFoundException
 	 */
 	public function findPaymentIntent(string $id): Payment;
+
+	public function putPayment(Payment $payment);
 }

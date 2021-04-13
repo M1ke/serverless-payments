@@ -16,7 +16,7 @@ services:
     volumes:
       - .:/var/task:ro
     env_file:
-      - .env.local
+      - .env.development.local
     expose:
       - 9003
   dynamo:

@@ -28,7 +28,7 @@ class DynamoPaymentRepository implements PaymentRepository {
 			throw new PaymentNotFoundException("The payment with ID $id could not be found");
 		}
 
-		$item = reset($items)[0];
+		$item = reset($items);
 
 		return Payment::hydrate($item);
 	}

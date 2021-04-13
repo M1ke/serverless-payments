@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Application\Actions\Payments\CreatePaymentAction;
+use App\Application\Actions\Payments\FetchPaymentAction;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\App;
@@ -21,5 +22,6 @@ return static function (App $app){
 		});
 
 		$group->post('/create', CreatePaymentAction::class);
+		$group->get('/fetch', FetchPaymentAction::class);
 	});
 };

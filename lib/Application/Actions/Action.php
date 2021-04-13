@@ -79,10 +79,15 @@ abstract class Action {
 
 	/**
 	 * @param array|object|null $data
-	 * @return ResponseInterface
 	 */
 	protected function respondWithData($data = null, int $statusCode = 200): ResponseInterface{
 		$payload = new ActionPayload($statusCode, $data);
+
+		return $this->respond($payload);
+	}
+
+	protected function respondWithError(string $message, int $statusCode = 400) :ResponseInterface {
+		$payload = new ActionPayload($statusCode, ['error' => $message]);
 
 		return $this->respond($payload);
 	}
