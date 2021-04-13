@@ -31,12 +31,14 @@ class CreatePaymentAction extends PaymentAction {
 			'currency' => $currency,
 		]);
 
-		$payment = new Payment($paymentIntent->id, $amount, $currency);
+		$secret = $paymentIntent->client_secret;
+		$payment = Payment::create($secret, $amount, $currency);
 
 		$this->payments->putPayment($payment);
 
+		// replace this with just the Payment entity return
 		$output = [
-			'clientSecret' => $paymentIntent->client_secret,
+			'clientSecret' => $secret,
 		];
 
 		return $this->respondWithData($output);

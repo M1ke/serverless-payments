@@ -4,14 +4,13 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence;
 
 use Aws\DynamoDb\Marshaler;
-use JsonSerializable;
 use ReflectionClass;
 
 class DynamoUtils {
 
-	public static function marshalItem(JsonSerializable $entity): array{
+	public static function marshalItem(DynamoInterface $entity): array{
 		$marshaler = new Marshaler();
-		$item = $entity->jsonSerialize();
+		$item = $entity->output();
 
 		return $marshaler->marshalItem($item);
 	}
@@ -71,22 +70,16 @@ class DynamoUtils {
 	/**
 	 * @psalm-param class-string $entity
 	 */
-	public static function construct(string $entity, array $item): array{
+	public static function properties(string $entity, array $item): array{
 		try {
 			$class = new ReflectionClass($entity);
 		}
 		catch (\ReflectionException $e) {
 			return [];
 		}
-		$constructor = $class->getConstructor();
-		if (!$constructor){
-			return [];
-		}
+		$properties = $class->getProperties();
 
-		$params = $constructor->getParameters();
-
-		$arr = [];
-		foreach ($params as $param){
+		foreach ($properties as $param){
 			$name = $param->name;
 			$type = $param->getType()->getName();
 			$val = reset($item[$name]);

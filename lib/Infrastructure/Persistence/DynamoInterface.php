@@ -5,7 +5,7 @@ namespace App\Infrastructure\Persistence;
 
 use JsonSerializable;
 
-interface DynamoInterface extends JsonSerializable {
+interface DynamoInterface  {
 	public static function tableName(): string;
 
 	public static function hashName(): string;
@@ -13,4 +13,6 @@ interface DynamoInterface extends JsonSerializable {
 	public static function rangeName(): ?string;
 
 	public static function hydrate(array $item): self;
+
+	public function output() :array;
 }
