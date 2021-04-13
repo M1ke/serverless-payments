@@ -4,6 +4,7 @@
   "require": {
     "php": "^7.4",
     "ext-json": "*",
+    "aws/aws-sdk-php": "^3.178",
     "bref/bref": "^1.2",
     "bref/logger": "^1.0",
     "monolog/monolog": "^2.2",

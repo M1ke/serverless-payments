@@ -19,3 +19,8 @@ services:
       - .env.local
     expose:
       - 9003
+  dynamo:
+    build: docker/dynamo
+    environment:
+      - TZ=Europe/London
+    restart: on-failure
