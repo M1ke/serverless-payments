@@ -81,6 +81,7 @@ class Payment implements DynamoInterface, JsonSerializable {
 	}
 
 	public static function tableName(): string{
+		// Could set this from an Env var
 		return 'serverless-payments';
 	}
 
@@ -94,5 +95,9 @@ class Payment implements DynamoInterface, JsonSerializable {
 
 	public function getId() :string{
 		return $this->id;
+	}
+
+	public function incrementPaid() :void{
+		$this->paid++;
 	}
 }

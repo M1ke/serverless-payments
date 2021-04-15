@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use App\Application\Settings\Env;
+use App\Domain\Payment\PaymentRepository;
 use Bref\Context\Context;
 use DI\ContainerBuilder;
 use Monolog\Formatter\JsonFormatter;
@@ -9,6 +10,8 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 require __DIR__.'/vendor/autoload.php';
 
@@ -49,5 +52,26 @@ return static function ($event, Context $context) use ($container, $logger){
 	$logger->debug('Received webhook from queue', [
 		'_webhook' => $data,
 		'_lambda' => $context->jsonSerialize(),
+	]);
+
+	Stripe::setApiKey(Env::getStripeKey());
+
+	$payment_intent_id = $data['data']['object']['payment_intent'];
+
+	$payment_intent = PaymentIntent::retrieve($payment_intent_id);
+
+	$payment_id = $payment_intent->metadata['id'];
+
+	$payments = $container->get(PaymentRepository::class);
+
+	$payment = $payments->findPayment($payment_id);
+
+	$payment->incrementPaid();
+
+	$payments->putPayment($payment);
+
+	$logger->notice("Updated payment", [
+		'id' => $payment_id,
+		'payment_intent' => $payment_intent_id,
 	]);
 };

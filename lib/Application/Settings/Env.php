@@ -30,6 +30,6 @@ class Env {
 	}
 
 	public static function getCurrency() :string{
-		return $_ENV[self::CURRENCY] ?? 'usd';
+		return $_ENV[self::CURRENCY];
 	}
 }
