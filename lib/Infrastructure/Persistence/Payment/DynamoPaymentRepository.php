@@ -8,17 +8,16 @@ use App\Domain\Payment\PaymentNotFoundException;
 use App\Domain\Payment\PaymentRepository;
 use App\Infrastructure\Persistence\DynamoUtils;
 use Aws\DynamoDb\DynamoDbClient;
-use Aws\DynamoDb\Marshaler;
 
 class DynamoPaymentRepository implements PaymentRepository {
 
-	private ?DynamoDbClient $client;
+	private DynamoDbClient $client;
 
 	public function __construct(DynamoDbClient $client){
 		$this->client = $client;
 	}
 
-	public function findPaymentIntent(string $id): Payment{
+	public function findPayment(string $id): Payment{
 		$params = DynamoUtils::findParams(Payment::class, $id);
 
 		$result = $this->client->query($params);

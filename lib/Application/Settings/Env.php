@@ -7,6 +7,7 @@ class Env {
 	public const PROD = 'PROD';
 	public const AWS_REGION = 'AWS_REGION';
 	public const DYNAMO_ENDPOINT = 'DYNAMO_ENDPOINT';
+	public const CURRENCY = 'REACT_APP_CURRENCY';
 
 	public static function isProd() :bool {
 		return (bool) ($_ENV[self::PROD] ?? false);
@@ -26,5 +27,9 @@ class Env {
 
 	public static function getDynamoEndpoint() :?string{
 		return $_ENV[self::DYNAMO_ENDPOINT] ?? null;
+	}
+
+	public static function getCurrency() :string{
+		return $_ENV[self::CURRENCY] ?? 'usd';
 	}
 }

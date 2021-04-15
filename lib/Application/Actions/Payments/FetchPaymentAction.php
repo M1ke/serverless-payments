@@ -4,6 +4,10 @@ namespace App\Application\Actions\Payments;
 use App\Domain\Payment\PaymentNotFoundException;
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * Designed for a simple test of the API
+ * without creating a new Stripe payment
+ */
 class FetchPaymentAction extends PaymentAction {
 
 	protected function action(): ResponseInterface{
@@ -14,7 +18,7 @@ class FetchPaymentAction extends PaymentAction {
 		}
 
 		try {
-			$payment = $this->payments->findPaymentIntent($id);
+			$payment = $this->payments->findPayment($id);
 		}
 		catch (PaymentNotFoundException $e) {
 			return $this->respondWithError("The payment with ID $id was not found", 404);

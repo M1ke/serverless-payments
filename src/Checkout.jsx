@@ -5,34 +5,33 @@ import {
 	useElements
 } from "@stripe/react-stripe-js";
 
-export default function CheckoutForm(){
+export default function CheckoutForm({id}){
 	const [succeeded, setSucceeded] = useState(false);
 	const [error, setError] = useState(null);
 	const [processing, setProcessing] = useState('');
 	const [disabled, setDisabled] = useState(true);
-	const [clientSecret, setClientSecret] = useState('');
+	const [payment, setPayment] = useState(null);
 	const stripe = useStripe();
 	const elements = useElements();
 
 	useEffect(() => {
 		// Create PaymentIntent as soon as the page loads
-		fetch(process.env.REACT_APP_API_URL+"/create", {
+		fetch(`${process.env.REACT_APP_API_URL}/start?id=${id}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
 			},
-			body: JSON.stringify({items: [{id: "xl-tshirt"}]})
 		})
-		.then(res => {
-			console.log('Stripe create request', res)
-			return res.json();
-		})
-		.then(res => {
-			setClientSecret(res.data.clientSecret);
-		});
-	}, []);
+			.then(res => {
+				console.log('Stripe create request', res)
+				return res.json();
+			})
+			.then(res => {
+				setPayment(res.data)
+			});
+	}, [id]);
 
-	if (!clientSecret){
+	if (!payment){
 		return <p>Stripe is loading&hellip;</p>
 	}
 
@@ -64,6 +63,7 @@ export default function CheckoutForm(){
 	const handleSubmit = async ev => {
 		ev.preventDefault();
 		setProcessing(true);
+		const {clientSecret} = payment
 
 		const payload = await stripe.confirmCardPayment(clientSecret, {
 			payment_method: {
@@ -84,6 +84,7 @@ export default function CheckoutForm(){
 
 	return (
 		<form id="payment-form" onSubmit={handleSubmit}>
+			<p>{`Ready to make a payment of ${payment.amount} (${payment.currency}) for: ${payment.description}`}</p>
 			<CardElement id="card-element" options={cardStyle} onChange={handleChange}/>
 			<button
 				disabled={processing || disabled || succeeded}

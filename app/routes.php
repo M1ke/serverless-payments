@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-use App\Application\Actions\Payments\CreatePaymentAction;
+use App\Application\Actions\Payments\SetupPaymentAction;
+use App\Application\Actions\Payments\StartPaymentAction;
 use App\Application\Actions\Payments\FetchPaymentAction;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -21,7 +22,8 @@ return static function (App $app){
 			return $response;
 		});
 
-		$group->post('/create', CreatePaymentAction::class);
+		$group->post('/start', StartPaymentAction::class);
+		$group->post('/setup', SetupPaymentAction::class);
 		$group->get('/fetch', FetchPaymentAction::class);
 	});
 };

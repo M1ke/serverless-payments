@@ -63,10 +63,6 @@ $request = $serverRequestCreator->createServerRequestFromGlobals();
 $responseFactory = $app->getResponseFactory();
 $errorHandler = new HttpErrorHandler($callableResolver, $responseFactory);
 
-// Create Shutdown Handler
-$shutdownHandler = new ShutdownHandler($request, $errorHandler, $displayErrorDetails);
-register_shutdown_function($shutdownHandler);
-
 // Add Routing Middleware
 $app->addRoutingMiddleware();
 

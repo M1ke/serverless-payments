@@ -1,59 +1,48 @@
 <?php
+/** @noinspection PhpPropertyOnlyWrittenInspection */
 declare(strict_types=1);
 
 namespace App\Domain\Payment;
 
+use App\Application\Settings\Env;
+use App\Domain\EntityHydrate;
 use App\Infrastructure\Persistence\DynamoInterface;
-use App\Infrastructure\Persistence\DynamoUtils;
 use JsonSerializable;
-use ReflectionClass;
+use Ramsey\Uuid\Guid\Guid;
 
 class Payment implements DynamoInterface, JsonSerializable {
-	private const PAYMENT_INTENT = 'payment_intent';
+	use EntityHydrate;
+
+	private const ID = 'id';
 	private const AMOUNT = 'amount';
+	private const DESCRIPTION = 'description';
 	private const CURRENCY = 'currency';
-	private const PAYMENT_SECRET = 'payment_secret';
 
-	private string $payment_intent;
+	private string $id;
 
-	private string $payment_secret;
+	private string $description;
 
 	private int $amount;
 
 	private string $currency;
 
-	private ?int $created;
+	private int $created;
+
+	private int $paid = 0;
 
 	private function __construct(){
 	}
 
-	private function set(string $payment_secret, int $amount, string $currency): self{
-		$this->payment_secret = $payment_secret;
-		$this->payment_intent = self::idFromSecret($payment_secret);
-		$this->amount = $amount;
-		$this->currency = $currency;
+	public static function create(float $amount, string $description): self{
+		$self = new self;
 
-		return $this;
-	}
-
-	public static function create(string $payment_secret, int $amount, string $currency): self{
-		$self = new self();
-		$self->set($payment_secret, $amount, $currency);
-		$self->setCreated(time());
+		$self->id = Guid::uuid4()->toString();
+		$self->amount = (int) round($amount * 100);
+		$self->currency = Env::getCurrency();
+		$self->description = $description;
+		$self->created = time();
 
 		return $self;
-	}
-
-	private static function idFromSecret(string $payment_secret){
-		return explode('_secret_', $payment_secret)[0];
-	}
-
-	public function getPaymentSecret(): string{
-		return $this->payment_secret;
-	}
-
-	public function getPaymentIntent(): string{
-		return $this->payment_intent;
 	}
 
 	public function getAmount(): int{
@@ -64,10 +53,19 @@ class Payment implements DynamoInterface, JsonSerializable {
 		return $this->currency;
 	}
 
+	public function getCreated(): int{
+		return $this->created;
+	}
+
+	public function getDescription(): ?string{
+		return $this->description;
+	}
+
 	public function jsonSerialize(){
 		return [
-			self::PAYMENT_SECRET => $this->payment_secret,
+			self::ID => $this->id,
 			self::AMOUNT => $this->amount,
+			self::DESCRIPTION => $this->description,
 			self::CURRENCY => $this->currency,
 		];
 	}
@@ -87,41 +85,14 @@ class Payment implements DynamoInterface, JsonSerializable {
 	}
 
 	public static function hashName(): string{
-		return self::PAYMENT_INTENT;
+		return self::ID;
 	}
 
 	public static function rangeName(): ?string{
 		return null;
 	}
 
-	public static function hydrate(array $item): self{
-		$class = new ReflectionClass(self::class);
-		$properties = $class->getProperties();
-
-		$self = new self;
-
-		foreach ($properties as $param){
-			$name = $param->name;
-			$type = $param->getType()->getName();
-			if (!isset($item[$name])){
-				continue;
-			}
-
-			$val = reset($item[$name]);
-			if (!$val){
-				continue;
-			}
-
-			settype($val, $type);
-			$self->$name = $val;
-		}
-
-		return $self;
-	}
-
-	private function setCreated(int $time): self{
-		$this->created = $time;
-
-		return $this;
+	public function getId() :string{
+		return $this->id;
 	}
 }
