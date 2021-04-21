@@ -5,39 +5,38 @@ namespace Tests;
 
 use DI\ContainerBuilder;
 use Exception;
+use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase as PHPUnit_TestCase;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Headers;
 use Slim\Psr7\Request as SlimRequest;
 use Slim\Psr7\Uri;
+use function DI\autowire;
 
-class TestCase extends PHPUnit_TestCase {
-	/**
-	 * @throws Exception
-	 */
-	protected function getAppInstance(): App{
+class AppTestCase extends PHPUnit_TestCase {
+	protected function getAppInstance(array $definitions = []): App{
 		// Instantiate PHP-DI ContainerBuilder
 		$containerBuilder = new ContainerBuilder();
 
 		// Container intentionally not compiled for tests.
 
-		// Set up settings
-		$settings = require __DIR__.'/../app/settings.php';
-		$settings($containerBuilder);
-
-		// Set up dependencies
-		$dependencies = require __DIR__.'/../app/dependencies.php';
-		$dependencies($containerBuilder);
-
-		// Set up repositories
-		$repositories = require __DIR__.'/../app/repositories.php';
-		$repositories($containerBuilder);
+		$containerBuilder->addDefinitions(array_merge([
+			LoggerInterface::class => autowire(NullLogger::class),
+		], $definitions));
 
 		// Build PHP-DI Container instance
-		$container = $containerBuilder->build();
+		try {
+			$container = $containerBuilder->build();
+		}
+		catch (Exception $e) {
+			Assert::fail("Failed to create the application: {$e->getMessage()}");
+		}
 
 		// Instantiate the app
 		AppFactory::setContainer($container);
@@ -57,19 +56,16 @@ class TestCase extends PHPUnit_TestCase {
 	protected function createRequest(
 		string $method,
 		string $path,
-		array $headers = ['HTTP_ACCEPT' => 'application/json'],
-		array $cookies = [],
-		array $serverParams = []
+		?StreamInterface $stream = null
 	): ServerRequestInterface{
 		$uri = new Uri('', '', 80, $path);
-		$handle = fopen('php://temp', 'wb+');
-		$stream = (new StreamFactory())->createStreamFromResource($handle);
-
-		$h = new Headers();
-		foreach ($headers as $name => $value){
-			$h->addHeader($name, $value);
+		if (!$stream){
+			$handle = fopen('php://temp', 'wb+');
+			$stream = (new StreamFactory())->createStreamFromResource($handle);
 		}
 
-		return new SlimRequest($method, $uri, $h, $cookies, $serverParams, $stream);
+		$h = new Headers();
+
+		return new SlimRequest($method, $uri, $h, [], [], $stream);
 	}
 }

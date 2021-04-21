@@ -7,6 +7,7 @@ namespace App\Domain\Payment;
 use App\Application\Settings\Env;
 use App\Domain\EntityHydrate;
 use App\Infrastructure\Persistence\DynamoInterface;
+use App\Infrastructure\Time;
 use JsonSerializable;
 use Ramsey\Uuid\Guid\Guid;
 
@@ -40,7 +41,7 @@ class Payment implements DynamoInterface, JsonSerializable {
 		$self->amount = (int) round($amount * 100);
 		$self->currency = Env::getCurrency();
 		$self->description = $description;
-		$self->created = time();
+		$self->created = Time::time();
 
 		return $self;
 	}
@@ -75,14 +76,14 @@ class Payment implements DynamoInterface, JsonSerializable {
 
 		// This can just be a database level field
 		// or we can implement it on the read model in future
-		$arr['last_updated'] = time();
+		$arr['last_updated'] = Time::time();
 
 		return $arr;
 	}
 
 	public static function tableName(): string{
 		// Could set this from an Env var
-		return 'serverless-payments';
+		return Env::getDynamoTable();
 	}
 
 	public static function hashName(): string{
