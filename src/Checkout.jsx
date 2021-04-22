@@ -11,6 +11,8 @@ export default function CheckoutForm({ id, setId }){
 	const [processing, setProcessing] = useState('');
 	const [disabled, setDisabled] = useState(true);
 	const [payment, setPayment] = useState(null);
+	const [name, setName] = useState(null);
+	const [email, setEmail] = useState(null);
 	const stripe = useStripe();
 	const elements = useElements();
 
@@ -63,12 +65,17 @@ export default function CheckoutForm({ id, setId }){
 	const handleSubmit = async ev => {
 		ev.preventDefault();
 		setProcessing(true);
-		const {clientSecret} = payment
+		const { clientSecret } = payment
 
 		const payload = await stripe.confirmCardPayment(clientSecret, {
 			payment_method: {
-				card: elements.getElement(CardElement)
-			}
+				card: elements.getElement(CardElement),
+				billing_details: {
+					name,
+					email,
+				},
+			},
+			receipt_email: email,
 		});
 
 		if (payload.error){
@@ -86,6 +93,15 @@ export default function CheckoutForm({ id, setId }){
 		setId(null)
 	}
 
+	const changeName = ev => {
+		setName(ev.target.value)
+	}
+
+	const changeEmail = ev => {
+		const { target } = ev
+		setEmail(target.validity.valid ? target.value : null)
+	}
+
 	return (
 		<div className="container-shadow">
 			<h2 className="form-title">{succeeded ? 'Thanks for your custom' : 'Complete the payment'}</h2>
@@ -95,9 +111,18 @@ export default function CheckoutForm({ id, setId }){
 				<>
 					<p className="mb-2">{`Ready to make a payment of ${payment.amount} (${payment.currency}) for: ${payment.description}`}</p>
 					<form id="payment-form" onSubmit={handleSubmit}>
+						<div>
+							<label htmlFor="name">Name</label>
+							<input name="name" id="name" onChange={changeName} required/>
+						</div>
+						<div className="mt-2">
+							<label htmlFor="email">Email</label>
+							<input name="email" type="email" id="email" onChange={changeEmail} required/>
+						</div>
+						<p className="mt-2">Enter your card details below:</p>
 						<CardElement id="card-element" options={cardStyle} onChange={handleChange}/>
 						<button
-							disabled={processing || disabled || succeeded}
+							disabled={processing || disabled || !email || !name}
 							id="submit"
 							className="mt-2"
 						>

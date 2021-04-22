@@ -10,6 +10,9 @@ provider:
   environment:
     STRIPE_PRIVATE: ${env:STRIPE_PRIVATE}
     ORIGIN: ${env:ORIGIN}
+    REACT_APP_CURRENCY: ${env:REACT_APP_CURRENCY}
+    DYNAMO_TABLE: ${env:DYNAMO_TABLE}
+    PROD: ${env:PROD}
   iam:
     role:
       statements: # permissions for all of your functions can be set here
@@ -66,6 +69,11 @@ package:
     - '!node_modules/**'
     - '!public/**'
     - '!tests/**'
+    - '!.idea/**'
+    - '!bin/**'
+    - '!docker/**'
+    - '!src/**'
+    - '!build/**'
 
 resources:
   Outputs:
