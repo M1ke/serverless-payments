@@ -10,4 +10,4 @@ rm -rf ./build
 # the file above, but for some reason they do not
 REACT_APP_API_URL="$REACT_APP_API_URL" REACT_APP_STRIPE_PUBLIC="$REACT_APP_STRIPE_PUBLIC" REACT_APP_CURRENCY="$REACT_APP_CURRENCY" npm run build
 
-aws s3 sync build/ "s3://$BUCKET_FRONT_END/"
+aws s3 sync build/ "s3://$BUCKET_FRONT_END/" --delete
