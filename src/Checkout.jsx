@@ -5,7 +5,7 @@ import {
 	useElements
 } from "@stripe/react-stripe-js";
 
-export default function CheckoutForm({id}){
+export default function CheckoutForm({ id, setId }){
 	const [succeeded, setSucceeded] = useState(false);
 	const [error, setError] = useState(null);
 	const [processing, setProcessing] = useState('');
@@ -32,7 +32,7 @@ export default function CheckoutForm({id}){
 	}, [id]);
 
 	if (!payment){
-		return <p>Stripe is loading&hellip;</p>
+		return <p>Setting up the payment&hellip;</p>
 	}
 
 	const cardStyle = {
@@ -82,38 +82,42 @@ export default function CheckoutForm({id}){
 		}
 	};
 
+	const reset = () => {
+		setId(null)
+	}
+
 	return (
-		<form id="payment-form" onSubmit={handleSubmit}>
-			<p>{`Ready to make a payment of ${payment.amount} (${payment.currency}) for: ${payment.description}`}</p>
-			<CardElement id="card-element" options={cardStyle} onChange={handleChange}/>
-			<button
-				disabled={processing || disabled || succeeded}
-				id="submit"
-			>
-        <span id="button-text">
-          {processing ? (
-	          <div className="spinner" id="spinner"/>
-          ) : (
-	          "Pay now"
-          )}
-        </span>
-			</button>
-			{/* Show any error that happens when processing the payment */}
-			{error && (
-				<div className="card-error" role="alert">
-					{error}
-				</div>
-			)}
-			{/* Show a success message upon completion */}
-			<p className={succeeded ? "result-message" : "result-message hidden"}>
-				Payment succeeded, see the result in your
-				<a
-					href={`https://dashboard.stripe.com/test/payments`}
-				>
-					{" "}
-					Stripe dashboard.
-				</a> Refresh the page to pay again.
-			</p>
-		</form>
+		<div className="container-shadow">
+			<h2 className="form-title">{succeeded ? 'Thanks for your custom' : 'Complete the payment'}</h2>
+			{succeeded ? <p className="mt-2 p-2 bg-green-600 text-white text-center">
+					{`Your payment of ${payment.amount} (${payment.currency}) for: ${payment.description} is complete`}
+				</p> :
+				<>
+					<p className="mb-2">{`Ready to make a payment of ${payment.amount} (${payment.currency}) for: ${payment.description}`}</p>
+					<form id="payment-form" onSubmit={handleSubmit}>
+						<CardElement id="card-element" options={cardStyle} onChange={handleChange}/>
+						<button
+							disabled={processing || disabled || succeeded}
+							id="submit"
+							className="mt-2"
+						>
+					        <span id="button-text">
+					          {processing ? (
+						          <div className="spinner" id="spinner"/>
+					          ) : (
+						          "Pay now"
+					          )}
+					        </span>
+						</button>
+						{/* Show any error that happens when processing the payment */}
+						{error && (
+							<div className="mt-2 p-2 bg-red-400 text-white text-center" role="alert">
+								{error}
+							</div>
+						)}
+					</form>
+				</>}
+			<p className="mt-2"><a href="#" onClick={reset} className="text-blue-500 hover:text-blue-700 font-bold">Set up a new payment</a></p>
+		</div>
 	);
 }

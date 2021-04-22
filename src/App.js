@@ -26,7 +26,7 @@ function App(){
 		<div className="App">
 			<header className="App-header">
 				<Elements stripe={promise}>
-					{id ? <Checkout id={id}/> : <Setup setId={setId}/>}
+					{id ? <Checkout id={id} setId={setId}/> : <Setup setId={setId}/>}
 				</Elements>
 			</header>
 		</div>
