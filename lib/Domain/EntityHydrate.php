@@ -14,7 +14,6 @@ trait EntityHydrate {
 
 		foreach ($properties as $param){
 			$name = $param->name;
-			$type = $param->getType()->getName();
 			if (!isset($item[$name])){
 				continue;
 			}
@@ -23,8 +22,11 @@ trait EntityHydrate {
 			if (!$val){
 				continue;
 			}
-
-			settype($val, $type);
+			$type = $param->getType();
+			if ($type!==null){
+				$type_name = $type->getName();
+				settype($val, $type_name);
+			}
 			$self->$name = $val;
 		}
 

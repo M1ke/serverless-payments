@@ -3,8 +3,7 @@
 namespace App\Infrastructure;
 
 class Time {
-	/** @var int */
-	private static $time;
+	private static ?int $time;
 
 	public static function time() :int{
 		return self::$time ?? time();

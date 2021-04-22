@@ -27,7 +27,10 @@ class DynamoUtils {
 	public static function findParams(string $entity, string $hash_key, ?string $range_key = null): array{
 		$eav = self::marshallEav($hash_key, $range_key);
 
-		/** @var DynamoInterface $entity */
+		/**
+		 * @var DynamoInterface $entity
+		 * @psalm-var class-string $entity
+		 */
 		$hash_name = $entity::hashName();
 
 		$params = [
@@ -37,7 +40,7 @@ class DynamoUtils {
 			'ExpressionAttributeValues' => $eav,
 		];
 
-		return self::addRangeKey($entity, $range_key, $params);
+		return self::addRangeKey($entity, $params, $range_key);
 	}
 
 	private static function marshallEav(string $hash_key, ?string $range_key): array{
@@ -52,8 +55,9 @@ class DynamoUtils {
 
 	/**
 	 * @psalm-param class-string $entity
+	 * @psalm-param ?scalar $range_key
 	 */
-	private static function addRangeKey(string $entity, ?string $range_key, array $params): array{
+	private static function addRangeKey(string $entity, array $params, $range_key = null): array{
 		if (!$range_key){
 			return $params;
 		}
@@ -81,9 +85,13 @@ class DynamoUtils {
 
 		foreach ($properties as $param){
 			$name = $param->name;
-			$type = $param->getType()->getName();
+			$type = $param->getType();
 			$val = reset($item[$name]);
-			settype($val, $type);
+			if ($type!==null){
+				$type_name = $type->getName();
+				settype($val, $type_name);
+			}
+
 			$arr[] = $val;
 		}
 
