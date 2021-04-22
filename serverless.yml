@@ -26,6 +26,16 @@ provider:
 
 plugins:
   - ./vendor/bref/bref
+  - serverless-export-outputs
+
+custom:
+  exportOutputs:
+    include:
+      - WebhookURI
+      - DistributionId
+    output:
+      file: ./serverless-output.json # file path and name relative to root
+      format: json # toml, yaml/yml, json
 
 functions:
   api:
@@ -62,6 +72,9 @@ resources:
     WebhookURI:
       Description: The URI that webhooks should be sent to
       Value: !GetAtt WebhookHttpApi.ApiEndpoint
+    DistributionId:
+      Description: The ID to create invalidations at
+      Value: !Ref WebsiteCDN
   Resources:
     # The S3 bucket that stores the assets
     Website:
@@ -110,6 +123,9 @@ resources:
           DefaultCacheBehavior:
             AllowedMethods: [GET, HEAD]
             TargetOriginId: Website
+            MinTTL: 0
+            DefaultTTL: 300
+            MaxTTL: 300
             ForwardedValues:
               QueryString: 'false'
               Cookies:

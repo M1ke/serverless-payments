@@ -11,3 +11,10 @@ rm -rf ./build
 REACT_APP_API_URL="$REACT_APP_API_URL" REACT_APP_STRIPE_PUBLIC="$REACT_APP_STRIPE_PUBLIC" REACT_APP_CURRENCY="$REACT_APP_CURRENCY" npm run build
 
 aws s3 sync build/ "s3://$BUCKET_FRONT_END/" --delete
+
+DISTRIBUTION_ID=$(node -p "require('./serverless-output.json').DistributionId")
+
+echo "Distribution ID: $DISTRIBUTION_ID"
+
+aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/index.html" --output text
+
