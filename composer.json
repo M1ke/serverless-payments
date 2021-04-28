@@ -1,6 +1,6 @@
 {
   "name": "m1ke/serverless-payments",
-  "description": "A Slim Framework skeleton application for rapid development",
+  "description": "Serverless application using Bref to set up Stripe payments",
   "require": {
     "php": "^7.4",
     "ext-json": "*",
