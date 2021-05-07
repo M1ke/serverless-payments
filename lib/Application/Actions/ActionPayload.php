@@ -45,8 +45,15 @@ class ActionPayload implements JsonSerializable {
 	}
 
 	public function jsonSerialize(): array{
+		$status = $this->statusCode;
 		$payload = [
-			'statusCode' => $this->statusCode,
+			'statusCode' => $status,
+			// Inspired by JS Fetch command that always returns
+			// a bool "ok" that's true for any code other than
+			// 4xx or 5xx. Makes it easy for a consumer to always
+			// check a simple bool value rather than existence of
+			// an error field or otherwise
+			'ok' => !($status>=400 && $status<=599),
 		];
 
 		if ($this->data!==null){
