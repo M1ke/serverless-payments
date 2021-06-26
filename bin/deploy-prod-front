@@ -35,3 +35,7 @@ aws s3 sync build/ "s3://$BUCKET_FRONT_END/" --delete
 DISTRIBUTION_ID=$(node -p "require('./serverless-output-production.json').DistributionId")
 echo "Distribution ID: $DISTRIBUTION_ID"
 aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/index.html" --output text
+
+echo ""
+echo "Front end available for PRODUCTION, you can view it at:"
+echo " https://$CLOUDFRONT_DOMAIN/"

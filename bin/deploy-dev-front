@@ -29,3 +29,7 @@ REACT_APP_API_URL="$REACT_APP_API_URL" REACT_APP_STRIPE_PUBLIC="$REACT_APP_STRIP
 
 # Important to remember --delete means we can't use the bucket for storage
 aws s3 sync build/ "s3://$BUCKET_FRONT_END/" --delete
+
+echo ""
+echo "Front end available for development, you can view it at:"
+echo " https://$CLOUDFRONT_DOMAIN/"
