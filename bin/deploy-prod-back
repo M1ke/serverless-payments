@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+echo "Deploying to PRODUCTION"
+
+source .env.production
+if [ "$PROD" -ne "1" ]; then
+  echo "The PROD envvar must be set to 1, it is set to '$PROD'"
+  exit 1
+fi
+
+docker-compose run composer composer install --no-dev -o
+
+sls deploy --stage=production
+
+docker-compose run composer composer install
+
+echo "The stack is deployed for PRODUCTION. You can now run 'bin/deploy-prod-front' to set up the front end"
+
+WEBHOOK_URI=$(node -p "require('./serverless-output-production.json').WebhookURI")
+echo "You can send production webhooks to: $WEBHOOK_URI"

@@ -28,9 +28,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-.env.local
 .env.development
 .env.development.local
 .env.production
 
-serverless-output.json
+serverless-output-*.json

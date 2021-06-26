@@ -1,3 +1,20 @@
 #!/bin/bash
 
+set -e
+
+source .env.development
+if [ "$PROD" -ne "0" ]; then
+  echo "The PROD envvar must be set to 0, it is set to '$PROD'"
+  exit 1
+fi
+
+docker-compose run composer composer install -q --no-dev -o
+
 sls deploy --stage=development
+
+docker-compose run composer composer install -q
+
+echo "The stack is deployed for DEVELOPMENT. You can now run 'bin/deploy-dev-front' to set up the front end"
+
+WEBHOOK_URI=$(node -p "require('./serverless-output-development.json').WebhookURI")
+echo "You can send development webhooks to: $WEBHOOK_URI"

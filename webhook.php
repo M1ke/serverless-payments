@@ -46,6 +46,10 @@ $container = $containerBuilder->build();
 $logger = _getLogger();
 
 return static function ($event, Context $context) use ($container, $logger){
+	// @todo this is currently designed for one type of webhook
+	// but will receive all of them and error for the rest. We probably
+	// want to handle that more elegantly!
+
 	$record = reset($event['Records']);
 	$data = json_decode($record['body'], true, JSON_THROW_ON_ERROR);
 

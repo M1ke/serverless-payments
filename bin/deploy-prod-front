@@ -1,14 +1,14 @@
 #!/bin/bash
 
-source .env.development
+source .env.production
 if [ -z "$BUCKET_FRONT_END" ]; then
   echo "Must set BUCKET_FRONT_END"
   exit 1
 fi
-BUCKET_FRONT_END="$BUCKET_FRONT_END-development"
+BUCKET_FRONT_END="$BUCKET_FRONT_END-production"
 
 # We overwrite the REACT_APP_API_URL by working it out from our back-end deployment
-CLOUDFRONT_DOMAIN=$(node -p "require('./serverless-output-development.json').CloudfrontDomain")
+CLOUDFRONT_DOMAIN=$(node -p "require('./serverless-output-production.json').CloudfrontDomain")
 if [ -z "$CLOUDFRONT_DOMAIN" ]; then
   echo "Couldn't find CLOUDFRONT_DOMAIN in the serverless output"
   exit 1
@@ -29,3 +29,9 @@ REACT_APP_API_URL="$REACT_APP_API_URL" REACT_APP_STRIPE_PUBLIC="$REACT_APP_STRIP
 
 # Important to remember --delete means we can't use the bucket for storage
 aws s3 sync build/ "s3://$BUCKET_FRONT_END/" --delete
+
+# The build will use hashes for the JS files, but in production the index.html is cached and we want
+# to be able to cache it long term - invalidation is the only way round that
+DISTRIBUTION_ID=$(node -p "require('./serverless-output-production.json').DistributionId")
+echo "Distribution ID: $DISTRIBUTION_ID"
+aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/index.html" --output text

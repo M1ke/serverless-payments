@@ -35,7 +35,7 @@ class Env {
 	}
 
 	public static function getDynamoTable() :string{
-		return $_ENV[self::DYNAMO_TABLE];
+		return $_ENV[self::DYNAMO_TABLE].'-'.(self::isProd() ? 'production' : 'development');
 	}
 
 	public static function tests(array $test_env) :void{

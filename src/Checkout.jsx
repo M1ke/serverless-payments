@@ -102,14 +102,19 @@ export default function CheckoutForm({ id, setId }){
 		setEmail(target.validity.valid ? target.value : null)
 	}
 
+	const amount = payment => {
+		const decimal = payment.amount/100
+		return `${decimal} (${payment.currency.toUpperCase()})`
+	}
+
 	return (
 		<div className="container-shadow">
 			<h2 className="form-title">{succeeded ? 'Thanks for your custom' : 'Complete the payment'}</h2>
 			{succeeded ? <p className="mt-2 p-2 bg-green-600 text-white text-center">
-					{`Your payment of ${payment.amount} (${payment.currency}) for: ${payment.description} is complete`}
+					{`Your payment of ${amount(payment)} for '${payment.description}' is complete`}
 				</p> :
 				<>
-					<p className="mb-2">{`Ready to make a payment of ${payment.amount} (${payment.currency}) for: ${payment.description}`}</p>
+					<p className="mb-2">{`Ready to make a payment of ${amount(payment)} for: ${payment.description}`}</p>
 					<form id="payment-form" onSubmit={handleSubmit}>
 						<div>
 							<label htmlFor="name">Name</label>

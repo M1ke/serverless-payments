@@ -1,6 +1,10 @@
 version: "3.5"
 
 services:
+  composer:
+    image: composer
+    volumes:
+      - .:/app
   web:
     image: bref/fpm-dev-gateway
     ports:
@@ -15,10 +19,16 @@ services:
     image: bref/php-74-fpm-dev
     volumes:
       - .:/var/task:ro
+    depends_on:
+      - dynamo
     env_file:
       - .env.development.local
     expose:
       - 9003
+  test:
+    image: webdevops/php-dev:7.4
+    volumes:
+      - .:/app
   dynamo:
     build: docker/dynamo
     environment:
