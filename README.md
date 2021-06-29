@@ -1,11 +1,20 @@
 # Serverless payments
 
-This repository allows you to set up a serverles website, using AWS, to
-accept payments via Stripe. All it requires installed on your machine is
+Accepting payments should be easy for any developer. Stripe provides a
+great API to achieve this, but both front and back-end programming is
+needed to utilise it. Alternative plugins in common web platforms are
+available but generally come at an extra cost.
 
-* node >=12
-* awscli
-* docker
+This repository allows you to set up a serverles website, front and back-end, using AWS, to accept payments via Stripe.
+
+## Basics
+
+To deploy this website you'll need just a couple of tools installed on
+your machine:
+
+* node >=12 (I recommend installing [using nvm](https://github.com/nvm-sh/nvm#install--update-script))
+* [docker](https://docker-docs.netlify.app/install/)
+* [awscli](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 
 You will need AWS credentials available with relatively wide-ranging
 permissions to create new resources and then manage them, however you
@@ -31,7 +40,14 @@ and posts the unique links publicly. Anybody with a link can make a
 payment with the required amount/description and will be emailed
 a receipt by Stripe.
 
-## Deploying an API to Amazon Lambda
+_Modifying_
+
+Of course, you can modify the front or back-end code to expand available
+features. This repository can be used as a "template" in GitHub, meaning
+that instead of forking and linking back upstream, you can take the
+development in your own direction.
+
+## Deploying to AWS
 
 The deployment to Lambda is controlled by `serverless.yml` and requires
 the Serverless framework to be installed locally with:
@@ -62,7 +78,7 @@ Once the back end is deployed we can run:
 bin/deploy-dev-front
 ```
 
-At the end of this we should see a URL to view our front end.
+At the end of this we should be shown a URL to view our front end.
 
 ## Running locally
 
@@ -89,6 +105,18 @@ At this point the website should be accessible at
 `curl -I http://localhost:8080/api/` to which we should see a 204
 no content response.
 
+## Production deployments
+
+Equivalent deployment files are available for production deployments,
+check `deploy-prod-back` and `deploy-prod-front`. This will require a
+`.env.production` file, with `PROD` set to 1.
+
+_Using your own domain_
+
+CloudFront can be set up with your own domain; there are guides online
+to accomplish this but this could be helpful to have in the docs for
+this project!
+
 ## Future improvements
 
 Some useful improvements from a user standpoint would be:
@@ -101,7 +129,7 @@ Some useful improvements from a user standpoint would be:
 In terms of developer experience:
 
 * Migrate complex blocks of CloudFormation code for Cloudfront,
-  webhooks, queue processing to use getlift/lift plugin
+  webhooks, queue processing to use [getlift/lift](https://github.com/getlift/lift/) plugin
 * Tests are currently incomplete; would be good to ensure all tests can
   run, also Psalm, locally via composer
 * GitHub actions at the very least to allow tests to run on the public
