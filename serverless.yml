@@ -30,6 +30,7 @@ provider:
 plugins:
   - ./vendor/bref/bref
   - serverless-export-outputs
+  - serverless-lift
 
 functions:
   api:
@@ -40,16 +41,6 @@ functions:
       - ${bref:layer.php-74-fpm}
     events:
       - httpApi: '*'
-  webhook:
-    handler: webhook.php
-    layers:
-      - ${bref:layer.php-74}
-    events:
-      - sqs:
-          # We only want to process 1 at a time
-          # so if it fails we can retry
-          batchSize: 1
-          arn: !GetAtt WebhookQueue.Arn
 
 # Exclude files from deployment
 package:
@@ -60,169 +51,30 @@ package:
     - 'vendor/**'
     - '*.php'
 
+constructs:
+  front:
+    type: static-website
+    path: build
+  webhook:
+    type: webhook
+    path: /webhook
+    insecure: true
+  queue:
+    type: queue
+    worker:
+      handler: webhook.php
+      layers:
+        - ${bref:layer.php-74}
+
 resources:
-  Outputs:
-    CloudfrontDomain:
-      Description: The URL our application runs at
-      Value: !GetAtt WebsiteCDN.DomainName
-    WebhookURI:
-      Description: The URI that webhooks should be sent to
-      Value: !GetAtt WebhookHttpApi.ApiEndpoint
-    DistributionId:
-      Description: The ID to create invalidations at
-      Value: !Ref WebsiteCDN
+#  Outputs:
+#    CloudfrontDomain:
+#      Description: The URL our application runs at
+#      Value: !GetAtt WebsiteCDN.DomainName
+#    WebhookURI:
+#      Description: The URI that webhooks should be sent to
+#      Value: !GetAtt WebhookHttpApi.ApiEndpoint
   Resources:
-    # The S3 bucket that stores the assets
-    Website:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${env:BUCKET_FRONT_END}-${opt:stage}
-    # The policy that makes the bucket publicly readable
-    WebsiteBucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket: !Ref Website # References the bucket we defined above
-        PolicyDocument:
-          Statement:
-            - Effect: Allow
-              Principal: '*' # everyone
-              Action: 's3:GetObject' # to read
-              Resource: !Join [ '/', [ !GetAtt Website.Arn, '*' ] ] # things in the bucket
-            # alternatively you can write out Resource: 'arn:aws:s3:::<bucket-name>/*'
-    WebsiteCDN:
-      Type: AWS::CloudFront::Distribution
-      Properties:
-        DistributionConfig:
-          Enabled: true
-          # Cheapest option by default (https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_DistributionConfig.html)
-          PriceClass: PriceClass_100
-          # Enable http2 transfer for better performances
-          HttpVersion: http2
-          DefaultRootObject: 'index.html'
-          # Origins are where CloudFront fetches content
-          Origins:
-            # The API (AWS Lambda)
-            - Id: Api
-              DomainName: !Join [ '.', [ !Ref HttpApi, 'execute-api', !Ref AWS::Region, 'amazonaws.com' ] ]
-              CustomOriginConfig:
-                OriginProtocolPolicy: 'https-only' # API Gateway only supports HTTPS
-            # CloudFront does not forward the original `Host` header. We use this
-            # to forward the website domain name to PHP via the `X-Forwarded-Host` header.
-            # Learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
-            #OriginCustomHeaders:
-            #    -   HeaderName: 'X-Forwarded-Host'
-            #        HeaderValue: example.com # our custom domain
-            # The front end (S3)
-            - Id: Website
-              DomainName: !GetAtt Website.RegionalDomainName
-              S3OriginConfig: { } # this key is required to tell CloudFront that this is an S3 origin, even though nothing is configured
-          DefaultCacheBehavior:
-            AllowedMethods: [ GET, HEAD ]
-            TargetOriginId: Website
-            MinTTL: 0
-            # Change these to higher values for production
-            # @todo can we set this differently if env is prod, like a ternary?
-            DefaultTTL: 0
-            MaxTTL: 0
-            ForwardedValues:
-              QueryString: 'false'
-              Cookies:
-                Forward: none
-            ViewerProtocolPolicy: redirect-to-https
-            Compress: true # Serve files with gzip for browsers that support it (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html)
-          CacheBehaviors:
-            - PathPattern: '/api/*'
-              TargetOriginId: Api
-              AllowedMethods: [ GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE ]
-              # We don't want to cache API activity, though we could be more
-              # specific if we had some (e.g. GET) endpoints that were cacheable
-              DefaultTTL: 0
-              MinTTL: 0
-              MaxTTL: 0
-              # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-cloudfront-distribution-forwardedvalues.html
-              ForwardedValues:
-                QueryString: true
-                Cookies:
-                  Forward: all # Forward cookies to use them in PHP
-                # We must *not* forward the `Host` header else it messes up API Gateway
-                Headers:
-                  - 'Accept'
-                  - 'Accept-Encoding'
-                  - 'Accept-Language'
-                  - 'Authorization'
-                  - 'Content-type'
-                  - 'Origin'
-                  - 'Referer'
-              # CloudFront will force HTTPS on visitors (which is more secure)
-              ViewerProtocolPolicy: redirect-to-https
-          CustomErrorResponses:
-            # Force CloudFront to not cache HTTP errors
-            - ErrorCode: 500
-              ErrorCachingMinTTL: 0
-            - ErrorCode: 504
-              ErrorCachingMinTTL: 0
-    # This is where webhooks will be saved
-    WebhookQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        VisibilityTimeout: 600
-        MessageRetentionPeriod: 604800
-        ReceiveMessageWaitTimeSeconds: 20
-        RedrivePolicy:
-          deadLetterTargetArn: !GetAtt [ WebhookDeadLetterQueue, Arn ]
-          maxReceiveCount: 5
-    WebhookDeadLetterQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        MessageRetentionPeriod: 1209600
-    WebhookHttpApi:
-      Type: AWS::ApiGatewayV2::Api
-      Properties:
-        ProtocolType: HTTP
-        DisableExecuteApiEndpoint: false
-        Name: payment-webhooks-${opt:stage}
-    WebhookHttpApiRole:
-      Type: AWS::IAM::Role
-      Properties:
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service: apigateway.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: ApiWriteToSQS
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                Action: sqs:SendMessage
-                Effect: Allow
-                Resource: !GetAtt WebhookQueue.Arn
-    WebhookPayloadRoute:
-      Type: AWS::ApiGatewayV2::Route
-      Properties:
-        ApiId: !Ref WebhookHttpApi
-        RouteKey: POST /
-        Target: !Sub 'integrations/${WebhookRouteIntegration}'
-    WebhookRouteIntegration:
-      Type: AWS::ApiGatewayV2::Integration
-      Properties:
-        ApiId: !Ref WebhookHttpApi
-        Description: Proxy incoming HTTP Payload into Webhook SQS
-        IntegrationType: AWS_PROXY
-        IntegrationSubtype: SQS-SendMessage
-        PayloadFormatVersion: '1.0'
-        CredentialsArn: !GetAtt WebhookHttpApiRole.Arn
-        RequestParameters:
-          QueueUrl: !Ref WebhookQueue
-          MessageBody: $request.body # Send the body of the HTTP request into SQS
-    WehookStage:
-      Type: AWS::ApiGatewayV2::Stage
-      Properties:
-        AutoDeploy: true
-        StageName: ${opt:stage}
-        ApiId: !Ref WebhookHttpApi
     Dynamo:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -239,9 +91,9 @@ resources:
 custom:
   exportOutputs:
     include:
-      - CloudfrontDomain
-      - WebhookURI
-      - DistributionId
+#      - CloudfrontDomain
+#      - WebhookURI
+#      - DistributionId
     output:
       file: ./serverless-output-${opt:stage}.json # file path and name relative to root
       format: json # toml, yaml/yml, json
