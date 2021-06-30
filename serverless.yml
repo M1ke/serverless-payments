@@ -2,6 +2,7 @@ service: serverless-payments
 
 useDotenv: true
 configValidationMode: error
+variablesResolutionMode: 20210326
 
 provider:
   name: aws
@@ -65,6 +66,9 @@ functions:
     description: 'Slim framework (PHP) processor for webhooks'
     layers:
       - ${bref:layer.php-74}
+      # Not yet supported in Lift
+#    destinations:
+#      onFailure: ${construct:queue.dlqUrlOutput}
     events:
       - eventBridge:
           eventBus: ${construct:webhook.busName}
