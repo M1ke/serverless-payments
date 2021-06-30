@@ -1,12 +1,15 @@
 service: serverless-payments
 
 useDotenv: true
+configValidationMode: error
 
 provider:
   name: aws
   region: ${env:AWS_REGION}
   runtime: provided.al2
   lambdaHashingVersion: 20201221
+  eventBridge:
+    useCloudFormation: true
   environment:
     STRIPE_PRIVATE: ${env:STRIPE_PRIVATE}
     ORIGIN: ${env:ORIGIN}
@@ -32,25 +35,6 @@ plugins:
   - serverless-export-outputs
   - serverless-lift
 
-functions:
-  api:
-    handler: index.php
-    description: ''
-    timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
-    layers:
-      - ${bref:layer.php-74-fpm}
-    events:
-      - httpApi: '*'
-
-# Exclude files from deployment
-package:
-  patterns:
-    - '!./**'
-    - 'app/**'
-    - 'lib/**'
-    - 'vendor/**'
-    - '*.php'
-
 constructs:
   front:
     type: static-website
@@ -63,8 +47,39 @@ constructs:
     type: queue
     worker:
       handler: webhook.php
+      description: 'Slim framework (PHP) processor for webhook retries'
       layers:
         - ${bref:layer.php-74}
+
+functions:
+  api:
+    handler: index.php
+    description: 'Slim framework (PHP) API for payments'
+    timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+    layers:
+      - ${bref:layer.php-74-fpm}
+    events:
+      - httpApi: '*'
+  webhook:
+    handler: webhook.php
+    description: 'Slim framework (PHP) processor for webhooks'
+    layers:
+      - ${bref:layer.php-74}
+    events:
+      - eventBridge:
+          eventBus: ${construct:webhook.busName}
+          pattern:
+            source:
+              - webhook
+
+# Exclude files from deployment
+package:
+  patterns:
+    - '!./**'
+    - 'app/**'
+    - 'lib/**'
+    - 'vendor/**'
+    - '*.php'
 
 resources:
 #  Outputs:
@@ -91,9 +106,9 @@ resources:
 custom:
   exportOutputs:
     include:
-#      - CloudfrontDomain
-#      - WebhookURI
-#      - DistributionId
+      - CloudfrontDomain
+      - WebhookURI
+      - DistributionId
     output:
       file: ./serverless-output-${opt:stage}.json # file path and name relative to root
       format: json # toml, yaml/yml, json
