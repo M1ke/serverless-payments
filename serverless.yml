@@ -44,13 +44,6 @@ constructs:
     type: webhook
     path: /webhook
     insecure: true
-  queue:
-    type: queue
-    worker:
-      handler: webhook.php
-      description: 'Slim framework (PHP) processor for webhook retries'
-      layers:
-        - ${bref:layer.php-74}
 
 functions:
   api:
@@ -66,9 +59,8 @@ functions:
     description: 'Slim framework (PHP) processor for webhooks'
     layers:
       - ${bref:layer.php-74}
-      # Not yet supported in Lift
-#    destinations:
-#      onFailure: ${construct:queue.dlqUrlOutput}
+    destinations:
+      onFailure: !Ref WebhookDeadLetterQueue
     events:
       - eventBridge:
           eventBus: ${construct:webhook.busName}
@@ -94,6 +86,10 @@ resources:
 #      Description: The URI that webhooks should be sent to
 #      Value: !GetAtt WebhookHttpApi.ApiEndpoint
   Resources:
+    WebhookDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        MessageRetentionPeriod: 1209600
     Dynamo:
       Type: AWS::DynamoDB::Table
       Properties:
